@@ -1,4 +1,5 @@
 import os
+import sys
 import subprocess
 from pathlib import Path
 from tests.install_flatc import download_and_extract_flatc
@@ -23,4 +24,5 @@ def pytest_configure():
 
     # 4. 通过 flatc 生成 Python 文件
     subprocess.run(["flatc", "--python", "-o", str(output_dir), str(fbs_file)], check=True)
+    sys.path.insert(0, str(output_dir))  # 将 output_dir 添加到 sys.path
     print(f"Generated Python files from {fbs_file} to {output_dir}")

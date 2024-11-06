@@ -1,45 +1,60 @@
+import os
+
 import flatbuffers
+
 from flatbuffers_modifier import FlatbuffersModifier
-from tests.data.MyGame.Sample import Monster
+from tests.data.MyGame.Sample import Monster, Weapon
 
 
 def test_modify_single_member():
     # 初始化原始数据
     builder = flatbuffers.Builder(0)
 
-    # 构建武器和怪物
-    weapon_name = builder.CreateString("Sword")
+    # 构建 Weapon 对象
+    weapon_type = builder.CreateString("Sword")
+    Weapon.WeaponStart(builder)
+    Weapon.WeaponAddDamage(builder, 50)
+    Weapon.WeaponAddType(builder, weapon_type)
+    weapon_offset = Weapon.WeaponEnd(builder)
+
+    # 构建 Monster 对象
+    monster_name = builder.CreateString("Orc")
     Monster.MonsterStart(builder)
     Monster.MonsterAddHp(builder, 300)
-    Monster.MonsterAddName(builder, weapon_name)
-    weapon = Monster.MonsterEnd(builder)
-    builder.Finish(weapon)
+    Monster.MonsterAddName(builder, monster_name)
+    Monster.MonsterAddWeapon(builder, weapon_offset)  # 将 Weapon 对象添加到 Monster 中
+    monster_offset = Monster.MonsterEnd(builder)
+
+    builder.Finish(monster_offset)
 
     # 保存初始数据
+    os.makedirs("tests/data/output", exist_ok=True)
     original_data = builder.Output()
-    with open("monster.bin", "wb") as f:
+    with open("tests/data/output/monster.bin", "wb") as f:
         f.write(original_data)
 
     # 从文件读取数据并修改多个嵌套属性
-    with open("monster.bin", "rb") as f:
+    with open("tests/data/output/monster.bin", "rb") as f:
         data = f.read()
 
-    modifier = FlatbuffersModifier(data, "tests.data.MyGame.Sample", "Monster")
-    print("Original HP:", modifier.get_nested_field("hp"))
-    print("Original Weapon Damage:", modifier.get_nested_field("weapon.damage"))
+    modifier = FlatbuffersModifier(data, "MyGame.Sample", "Monster")
+    assert modifier.get_nested_field("hp") == 300
+    assert modifier.get_nested_field("weapon.damage") == 50
+    assert modifier.get_nested_field("weapon.type").decode() == "Sword"
 
     modifications = {
         "hp": 500,
-        "weapon.damage": 50,
+        "weapon.damage": 10,
         "weapon.type": "Bow"
     }
-    modifier.modify_fields(modifications)
+    updated_data = modifier.modify_fields(modifications)
+    modified_monster = Monster.Monster.GetRootAs(updated_data, 0)
 
     # 验证修改后的值
-    print("Modified HP:", modifier.get_nested_field("hp"))
-    print("Modified Weapon Damage:", modifier.get_nested_field("weapon.damage"))
+    assert modified_monster.Hp() == 500
+    assert modified_monster.Weapon().Damage() == 10
+    assert modified_monster.Weapon().Type().decode() == "Bow"
 
     # 输出修改后的数据并保存
-    updated_data = modifier.output()
-    with open("updated_monster.bin", "wb") as f:
+    with open("tests/data/output/updated_monster.bin", "wb") as f:
         f.write(updated_data)

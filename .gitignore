@@ -163,3 +163,4 @@ cython_debug/
 
 debug.py
 /tests/data/MyGame/
+/tests/data/output/
