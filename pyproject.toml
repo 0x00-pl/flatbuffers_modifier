@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "faltbuffers-modifier"
+version = "0.1.0"
+description = ""
+authors = ["0x00-pl <0x00.pl@gmail.com>"]
+readme = "README.md"
+packages = [
+    { include = "flatbuffers_modifier" }
+]
+
+[tool.poetry.dependencies]
+python = "^3.12"
+flatbuffers = "^24.3.25"
+pytest = "^8.3.3"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+

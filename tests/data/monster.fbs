@@ -1,0 +1,14 @@
+namespace MyGame.Sample;
+
+table Weapon {
+  damage: int;
+  type: string;
+}
+
+table Monster {
+  hp: int;
+  name: string;
+  weapon: Weapon;
+}
+
+root_type Monster;
