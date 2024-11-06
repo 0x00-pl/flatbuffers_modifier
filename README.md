@@ -1,6 +1,27 @@
 flatbuffers modifier
 ===================
 
+download flatc using poetry
+--------------
+```bash
+poetry run install-flatc
+```
+
+download flatc using python
+--------------
+
+```python
+from scripts.install_flatc import download_and_extract_flatc
+
+download_and_extract_flatc()
+```
+
+generate flatbuffers python code
+--------------
+```bash
+flatc --python -o <output_path> <fbs_file>
+```
+
 usage
 -----
 reference from `tests/test_flatbuffers_modifier.py`
@@ -11,6 +32,7 @@ from flatbuffers_modifier import FlatbuffersModifier
 with open("tests/data/output/monster.bin", "rb") as f:
     data = f.read()
 
+# add compiled flatbuffers schema to sys.path
 modifier = FlatbuffersModifier(data, "MyGame.Sample", "Monster")
 modifications = {
     "hp": 500,

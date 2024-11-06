@@ -2,7 +2,7 @@ import os
 import sys
 import subprocess
 from pathlib import Path
-from tests.install_flatc import download_and_extract_flatc
+from scripts.install_flatc import download_and_extract_flatc
 
 
 def pytest_configure():
