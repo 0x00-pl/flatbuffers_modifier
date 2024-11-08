@@ -34,6 +34,8 @@ def download_and_extract_flatc(version="24.3.25"):
 
     print(f"Downloading flatc {version} for {system}...")
     urllib.request.urlretrieve(url, download_path)
+    if not download_path.exists():
+        raise RuntimeError(f"Failed to download flatc from {url}")
 
     print("Extracting flatc...")
     if system == "Windows":
