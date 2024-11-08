@@ -2,6 +2,8 @@ stages:
   - install
   - test
 
+image: python:3.12
+
 install_dependencies:
   stage: install
   before_script:
