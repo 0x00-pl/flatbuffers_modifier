@@ -25,7 +25,7 @@ def download_and_extract_flatc(version="24.3.25"):
         url = f"https://github.com/google/flatbuffers/releases/download/v{version}/Windows.flatc.binary.zip"
         archive_name = "flatc.zip"
     elif system == "Linux":
-        url = f"https://github.com/google/flatbuffers/releases/download/v{version}/Linux.flatc.binary.g++-13.zip"
+        url = f"https://github.com/google/flatbuffers/releases/download/v{version}/Linux.flatc.binary.clang++-15.zip"
         archive_name = "flatc.tar.gz"
     else:
         raise OSError("Unsupported operating system")
