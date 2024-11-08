@@ -15,22 +15,23 @@ class FlatbuffersModifier:
         self.flatbuffers_data = flatbuffers_data
         self.flatbuffers_namespace = flatbuffers_namespace
         self.root_type_name = root_type_name
-        self.root = self.get_class(root_type_name).GetRootAs(self.flatbuffers_data, 0)
+        self.root = getattr(self.get_module(root_type_name), self.root_type_name).GetRootAs(self.flatbuffers_data, 0)
 
     def get_module(self, type_name: str):
-        return importlib.import_module(self.flatbuffers_namespace + '.' + type_name)
+        """
+        获取指定类型的模块
 
-    def get_class(self, type_name: str):
-        return getattr(importlib.import_module(self.flatbuffers_namespace + '.' + type_name), type_name)
+        :param type_name: 类型名称
+        :return: 模块对象
+        """
+        return importlib.import_module(self.flatbuffers_namespace + '.' + type_name)
 
     @staticmethod
     def fix_field_name(field_name: str):
-        # 自动将首字母大写以匹配生成的属性名称
+        """
+        自动将首字母大写以匹配生成的属性名称。
+        """
         return field_name[0].upper() + field_name[1:]
-
-    @staticmethod
-    def remove_prefix(string: str, prefix: str, separator: str = '.'):
-        return string.removeprefix(prefix + separator)
 
     def get_nested_field(self, path: str) -> Any:
         """
@@ -82,6 +83,12 @@ class FlatbuffersModifier:
         return object_module.End(builder)
 
     def modify_fields(self, modifications: Dict[str, Any]):
+        """
+        修改指定的嵌套字段
+
+        :param modifications: 字典，键为字段路径（如 'monster.weapon.damage'），值为新值
+        :return: 修改后的二进制数据
+        """
         builder = flatbuffers.Builder(0)
         new_root = self.recursive_rebuild(builder, self.root, modifications)
         builder.Finish(new_root)
