@@ -11,9 +11,9 @@ def get_project_install_path():
     return Path(__file__).parent.parent / "build" / "flatc"
 
 
-def download_and_extract_flatc(version="24.3.25"):
+def download_and_extract_flatc(version="24.3.25", force_reinstall=False):
     install_path = get_project_install_path()
-    if install_path.exists():
+    if not force_reinstall and install_path.exists():
         print(f"flatc already installed at {install_path}")
         return
 

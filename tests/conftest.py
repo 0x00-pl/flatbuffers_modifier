@@ -23,6 +23,6 @@ def pytest_configure():
     output_dir.mkdir(parents=True, exist_ok=True)
 
     # 4. 通过 flatc 生成 Python 文件
-    subprocess.run(["flatc", "--python", "-o", str(output_dir), str(fbs_file)], check=True)
+    subprocess.run([flatc_path / 'flatc', "--python", "-o", str(output_dir), str(fbs_file)], check=True)
     sys.path.insert(0, str(output_dir))  # 将 output_dir 添加到 sys.path
     print(f"Generated Python files from {fbs_file} to {output_dir}")
