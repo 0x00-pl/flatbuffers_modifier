@@ -1,0 +1,35 @@
+stages:
+  - install
+  - test
+
+# 定义安装依赖的任务
+install-dependencies:
+  stage: install
+  image: python:3.12                                            # 使用 Python 3.12 的 Docker 镜像
+  before_script:
+    - curl -sSL https://install.python-poetry.org | python3 -   # 安装 Poetry
+    - export PATH="$HOME/.local/bin:$PATH"                      # 添加 Poetry 到 PATH
+  script:
+    - poetry install                                            # 使用 Poetry 安装依赖
+  cache:
+    key: ${CI_COMMIT_REF_SLUG}
+    paths:
+      - .cache/pypoetry                                         # 缓存 Poetry 依赖
+      - .venv                                                   # 缓存 Poetry 创建的虚拟环境
+
+# 定义测试任务
+run-tests:
+  stage: test
+  image: python:3.12
+  before_script:
+    - export PATH="$HOME/.local/bin:$PATH"                      # 确保 Poetry 在 PATH 中
+  dependencies:
+    - install-dependencies                                      # 指定依赖任务
+  script:
+    - poetry run pytest tests/                                  # 使用 Poetry 运行 pytest
+  artifacts:
+    reports:
+      junit: test-results.xml                                   # 生成 JUnit 格式的测试报告
+    paths:
+      - .pytest_cache                                           # 缓存 pytest 的结果
+    expire_in: 30 days                                          # 设置 artifacts 过期时间为 30 天
