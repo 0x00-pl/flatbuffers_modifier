@@ -70,11 +70,11 @@ class FlatbuffersModifier:
                 if isinstance(new_value, str):
                     new_value = builder.CreateString(new_value)
                 sub_object = new_value
-            elif sub_modifications:
-                # 如果有多个修改，则递归重建子对象
+            elif hasattr(getattr(old_object, field)(), '_tab'):
+                # 如果是flatbuffers对象，则递归重建子对象
                 sub_object = self.recursive_rebuild(builder, getattr(old_object, field)(), sub_modifications)
             else:
-                # 如果没有修改，则直接获取旧对象的字段值
+                # 如果不是flatbuffers对象, 则直接使用新值
                 sub_object = getattr(old_object, field)()
                 if isinstance(sub_object, bytes):
                     sub_object = builder.CreateString(sub_object)
