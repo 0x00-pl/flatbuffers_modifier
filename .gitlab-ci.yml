@@ -1,5 +1,3 @@
-image: python:3.12
-
 stages:
   - install
   - test
@@ -7,6 +5,19 @@ stages:
 install_dependencies:
   stage: install
   before_script:
+    # 检查 Python 版本是否为 3.12
+    - |
+      if ! python3 --version | grep -q '3.12'; then
+        echo "Python 3.12 not found. Installing using pyenv..."
+        curl https://pyenv.run | bash
+        export PATH="$HOME/.pyenv/bin:$PATH"
+        eval "$(pyenv init --path)"
+        eval "$(pyenv init -)"
+        pyenv install 3.12.0
+        pyenv global 3.12.0
+      else
+        echo "Python 3.12 is already installed."
+      fi
     - curl -sSL https://install.python-poetry.org | python3 -  # 安装 Poetry
     - export PATH="$HOME/.local/bin:$PATH"                     # 添加 Poetry 到 PATH
   script:
