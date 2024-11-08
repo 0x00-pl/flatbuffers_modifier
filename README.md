@@ -1,5 +1,6 @@
 flatbuffers modifier
 ===================
+![CI status](https://github.com/0x00-pl/flatbuffers_modifier/actions/workflows/ci.yml/badge.svg?branch=master)
 
 download flatc using poetry
 --------------
