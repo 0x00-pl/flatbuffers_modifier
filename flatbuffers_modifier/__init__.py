@@ -52,34 +52,42 @@ class FlatbuffersModifier:
         :param old_object: 旧对象
         :param modifications: 字典，键为字段路径（如 'monster.weapon.damage'），值为新值
         """
-
+        # 辅助成员方法名称列表
         aux_members = ['GetRootAs', f'GetRootAs{old_object.__class__.__name__}', 'Init']
+        # 获取旧对象的所有字段名称，排除辅助成员方法
         fields = [i for i in dir(old_object) if not i.startswith('_') and i not in aux_members]
         new_members: Dict[str, Any] = {}
         for field in fields:
+            # 获取与当前字段相关的所有修改
             sub_modifications = {
                 k[len(field) + 1:]: v
                 for k, v in modifications.items()
-                if self.fix_field_name(k).startswith(field)
+                if self.fix_field_name(k).startswith(field + '.') or self.fix_field_name(k) == field
             }
             if len(sub_modifications) == 1 and '' in sub_modifications:
+                # 如果只有一个修改且键为空字符串，则直接使用该值
                 new_value = sub_modifications['']
                 if isinstance(new_value, str):
                     new_value = builder.CreateString(new_value)
                 sub_object = new_value
             elif sub_modifications:
+                # 如果有多个修改，则递归重建子对象
                 sub_object = self.recursive_rebuild(builder, getattr(old_object, field)(), sub_modifications)
             else:
+                # 如果没有修改，则直接获取旧对象的字段值
                 sub_object = getattr(old_object, field)()
                 if isinstance(sub_object, bytes):
                     sub_object = builder.CreateString(sub_object)
 
             new_members[field] = sub_object
 
+        # 获取对象模块并开始构建新对象
         object_module = self.get_module(old_object.__class__.__name__)
         object_module.Start(builder)
         for field, sub_object in new_members.items():
+            # 添加字段到新���象
             getattr(object_module, 'Add' + field)(builder, sub_object)
+        # 结束对象构建并返回新对象
         return object_module.End(builder)
 
     def modify_fields(self, modifications: Dict[str, Any]):
