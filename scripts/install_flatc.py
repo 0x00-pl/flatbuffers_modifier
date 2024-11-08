@@ -40,7 +40,7 @@ def download_and_extract_flatc(version="24.3.25"):
         with zipfile.ZipFile(download_path, 'r') as zip_ref:
             zip_ref.extractall(install_path)
     elif system == "Linux":
-        with tarfile.open(download_path, 'r:gz') as tar_ref:
+        with tarfile.open(download_path, 'r') as tar_ref:
             tar_ref.extractall(install_path)
 
     os.remove(download_path)
