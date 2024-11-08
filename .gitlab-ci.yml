@@ -2,10 +2,8 @@ stages:
   - install
   - test
 
-
 install_dependencies:
   stage: install
-  image: python:3.12
   before_script:
     # 检查 Python 版本是否为 3.12
     - |
