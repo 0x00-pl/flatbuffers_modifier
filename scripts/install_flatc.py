@@ -38,12 +38,20 @@ def download_and_extract_flatc(version="24.3.25", force_reinstall=False):
         raise RuntimeError(f"Failed to download flatc from {url}")
 
     print("Extracting flatc...")
+    flatc_path = None
     if system == "Windows":
         with zipfile.ZipFile(download_path, 'r') as zip_ref:
             zip_ref.extractall(install_path)
+        flatc_path = install_path / 'flatc.exe'
     elif system == "Linux":
         with zipfile.ZipFile(download_path, 'r') as tar_ref:
             tar_ref.extractall(install_path)
+        flatc_path = install_path / 'flatc'
+    else:
+        raise OSError("Unsupported operating system")
+
+    # 为 flatc 设置执行权限
+    flatc_path.chmod(flatc_path.stat().st_mode | 0o111)
 
     os.remove(download_path)
     print(f"flatc installed to {install_path}")
