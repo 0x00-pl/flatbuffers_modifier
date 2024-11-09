@@ -17,12 +17,25 @@ def test_modify_single_member():
     Weapon.WeaponAddType(builder, weapon_type)
     weapon_offset = Weapon.WeaponEnd(builder)
 
+    # 构建 Inventory.Weapon 对象
+    weapon_type = builder.CreateString("Axe")
+    Weapon.WeaponStart(builder)
+    Weapon.WeaponAddDamage(builder, 80)
+    Weapon.WeaponAddType(builder, weapon_type)
+    inventory_weapon_offset = Weapon.WeaponEnd(builder)
+
+    # 构建 Inventory 对象
+    Monster.StartInventoryVector(builder, 1)
+    builder.PrependSOffsetTRelative(inventory_weapon_offset)
+    inventory_offset = builder.EndVector(1)
+
     # 构建 Monster 对象
     monster_name = builder.CreateString("Orc")
     Monster.MonsterStart(builder)
     Monster.MonsterAddHp(builder, 300)
     Monster.MonsterAddName(builder, monster_name)
     Monster.MonsterAddWeapon(builder, weapon_offset)  # 将 Weapon 对象添加到 Monster 中
+    Monster.MonsterAddInventory(builder, inventory_offset)  # 添加一个空的 Inventory
     monster_offset = Monster.MonsterEnd(builder)
 
     builder.Finish(monster_offset)
@@ -45,7 +58,8 @@ def test_modify_single_member():
     modifications = {
         "hp": 500,
         "weapon.damage": 10,
-        "weapon.type": "Bow"
+        "weapon.type": "Bow",
+        "inventory.0.damage": 100
     }
     updated_data = modifier.modify_fields(modifications)
     modified_monster = Monster.Monster.GetRootAs(updated_data, 0)
@@ -54,6 +68,7 @@ def test_modify_single_member():
     assert modified_monster.Hp() == 500
     assert modified_monster.Weapon().Damage() == 10
     assert modified_monster.Weapon().Type().decode() == "Bow"
+    assert modified_monster.Inventory(0).Damage() == 100
 
     # 输出修改后的数据并保存
     with open("tests/data/output/updated_monster.bin", "wb") as f:

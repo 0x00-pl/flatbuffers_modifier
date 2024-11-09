@@ -9,6 +9,7 @@ table Monster {
   hp: int;
   name: string;
   weapon: Weapon;
+  inventory: [Weapon];
 }
 
 root_type Monster;
