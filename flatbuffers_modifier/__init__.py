@@ -71,7 +71,7 @@ class FlatbuffersModifier:
                 continue
             if field in aux_members:
                 continue
-            if field.endswith('AsNumpy') or field.endswith('Length') or field.endswith('IsNone'):
+            if field.endswith('AsNumpy') or (field.endswith('Length') and field[:-len('Length')] in fields) or field.endswith('IsNone'):
                 continue
 
             # 获取与当前字段相关的所有修改
