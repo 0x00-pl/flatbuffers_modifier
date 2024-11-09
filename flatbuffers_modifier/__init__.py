@@ -3,6 +3,7 @@ import re
 from typing import Any, Dict
 
 import flatbuffers
+import numpy
 
 
 class FlatbuffersModifier:
@@ -99,7 +100,15 @@ class FlatbuffersModifier:
             elif isinstance(member, list):
                 # 如果是flatbuffers对象，则递归重建子对象
                 sub_object_list = []
-                item_type = type(member[0]) if len(member) > 0 else None
+                if len(member) == 0:
+                    item_type = None
+                elif hasattr(old_object, f'{field}AsNumpy'):
+                    item_type = getattr(old_object, f'{field}AsNumpy')().dtype
+                elif type(member[0]) == bytes:
+                    item_type = 'bytes'
+                else:
+                    item_type = type(member[0])
+
                 for idx, item in enumerate(member):
                     idx_str = str(idx)
                     list_sub_modifications = {
@@ -107,18 +116,25 @@ class FlatbuffersModifier:
                         for k, v in sub_modifications.items()
                         if self.fix_field_name(k).startswith(idx_str + '.') or self.fix_field_name(k) == field
                     }
-                    if item_type == bytes:
+                    if item_type == 'bytes':
                         sub_object_list.append(builder.CreateString(item))
-                    elif item_type == int:
+                    elif isinstance(item_type, numpy.dtype):
                         sub_object_list.append(item)
                     else:
                         sub_object_list.append(self.recursive_rebuild(builder, item, list_sub_modifications))
 
                 getattr(object_module, f'Start{field}Vector')(builder, len(member))
-                for item in sub_object_list:
-                    if item_type == int:
-                        builder.PrependInt32(item)
+                if isinstance(item_type, numpy.dtype):
+                    if item_type == 'int32':
+                        for item in reversed(sub_object_list):
+                            builder.PrependInt32(item)
+                    elif item_type == 'uint8':
+                        for item in reversed(sub_object_list):
+                            builder.PrependUint8(item)
                     else:
+                        raise NotImplementedError(f'Unsupported numpy dtype: {item_type}. Please add to above.')
+                else:
+                    for item in reversed(sub_object_list):
                         builder.PrependUOffsetTRelative(item)
                 sub_object = builder.EndVector()
             else:
