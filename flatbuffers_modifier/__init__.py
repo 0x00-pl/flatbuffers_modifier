@@ -153,7 +153,7 @@ class FlatbuffersModifier:
         # 结束对象构建并返回新对象
         return object_module.End(builder)
 
-    def modify_fields(self, modifications: Dict[str, Any]):
+    def modify_fields(self, modifications: Dict[str, Any], identifier=None) -> bytes:
         """
         修改指定的嵌套字段
 
@@ -162,5 +162,5 @@ class FlatbuffersModifier:
         """
         builder = flatbuffers.Builder(0)
         new_root = self.recursive_rebuild(builder, self.root, modifications)
-        builder.Finish(new_root)
+        builder.Finish(new_root, identifier)
         return builder.Output()
