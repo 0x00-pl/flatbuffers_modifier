@@ -6,7 +6,7 @@ import flatbuffers
 
 
 class FlatbuffersModifier:
-    def __init__(self, flatbuffers_data: bytes, flatbuffers_namespace: str, root_type_name: str):
+    def __init__(self, flatbuffers_data: bytes, flatbuffers_namespace: str, root_type_name: str, offset=0):
         """
         初始化 FlatbuffersModifier
         :param flatbuffers_data: FlatBuffers 的二进制数据
@@ -16,7 +16,7 @@ class FlatbuffersModifier:
         self.flatbuffers_data = flatbuffers_data
         self.flatbuffers_namespace = flatbuffers_namespace
         self.root_type_name = root_type_name
-        self.root = getattr(self.get_module(root_type_name), self.root_type_name).GetRootAs(self.flatbuffers_data, 0)
+        self.root = getattr(self.get_module(root_type_name), self.root_type_name).GetRootAs(self.flatbuffers_data, offset)
 
     def get_module(self, type_name: str):
         """
@@ -30,9 +30,9 @@ class FlatbuffersModifier:
     @staticmethod
     def fix_field_name(field_name: str):
         """
-        自动将首字母大写以匹配生成的属性名称。
+        将字符串按下划线分隔，然后将每个单词首字母大写，再拼接
         """
-        return field_name[0].upper() + field_name[1:]
+        return ''.join(word.capitalize() for word in field_name.split('_'))
 
     def get_nested_field(self, path: str) -> Any:
         """
@@ -58,9 +58,11 @@ class FlatbuffersModifier:
         :param old_object: 旧对象
         :param modifications: 字典，键为字段路径（如 'monster.weapon.damage'），值为新值
         """
+        assert hasattr(old_object, '_tab')
+
         object_module = self.get_module(old_object.__class__.__name__)
         # 辅助成员方法名称列表
-        aux_members = ['GetRootAs', f'GetRootAs{old_object.__class__.__name__}', 'Init']
+        aux_members = ['GetRootAs', f'GetRootAs{old_object.__class__.__name__}', 'Init', f'{old_object.__class__.__name__}BufferHasIdentifier']
         # 获取旧对象的所有字段名称，排除辅助成员方法
         fields = dir(old_object)
         new_members: Dict[str, Any] = {}
@@ -104,11 +106,19 @@ class FlatbuffersModifier:
                         for k, v in sub_modifications.items()
                         if self.fix_field_name(k).startswith(idx_str + '.') or self.fix_field_name(k) == field
                     }
-                    sub_object_list.append(self.recursive_rebuild(builder, item, list_sub_modifications))
+                    if isinstance(item, bytes):
+                        sub_object_list.append(builder.CreateString(item))
+                    elif isinstance(item, int):
+                        sub_object_list.append(item)
+                    else:
+                        sub_object_list.append(self.recursive_rebuild(builder, item, list_sub_modifications))
 
                 getattr(object_module, f'Start{field}Vector')(builder, len(member))
                 for item in sub_object_list:
-                    builder.PrependUOffsetTRelative(item)
+                    if isinstance(item, int):
+                        builder.PrependInt32(item)
+                    else:
+                        builder.PrependUOffsetTRelative(item)
                 sub_object = builder.EndVector()
             else:
                 # 如果不是flatbuffers对象, 则直接使用新值
