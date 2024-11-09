@@ -99,7 +99,7 @@ class FlatbuffersModifier:
             elif isinstance(member, list):
                 # 如果是flatbuffers对象，则递归重建子对象
                 sub_object_list = []
-                item_type = type(member[0])
+                item_type = type(member[0]) if len(member) > 0 else None
                 for idx, item in enumerate(member):
                     idx_str = str(idx)
                     list_sub_modifications = {
