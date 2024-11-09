@@ -109,7 +109,7 @@ class FlatbuffersModifier:
                 getattr(object_module, f'Start{field}Vector')(builder, len(member))
                 for item in sub_object_list:
                     builder.PrependUOffsetTRelative(item)
-                sub_object = builder.EndVector(len(member))
+                sub_object = builder.EndVector()
             else:
                 # 如果不是flatbuffers对象, 则直接使用新值
                 sub_object = getattr(old_object, field)()

@@ -27,7 +27,7 @@ def test_modify_single_member():
     # 构建 Inventory 对象
     Monster.StartInventoryVector(builder, 1)
     builder.PrependSOffsetTRelative(inventory_weapon_offset)
-    inventory_offset = builder.EndVector(1)
+    inventory_offset = builder.EndVector()
 
     # 构建 Monster 对象
     monster_name = builder.CreateString("Orc")
