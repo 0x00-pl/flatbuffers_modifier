@@ -35,7 +35,7 @@ def test_modify_single_member():
     Monster.MonsterAddHp(builder, 300)
     Monster.MonsterAddName(builder, monster_name)
     Monster.MonsterAddWeapon(builder, weapon_offset)  # 将 Weapon 对象添加到 Monster 中
-    Monster.MonsterAddInventory(builder, inventory_offset)  # 添加一个空的 Inventory
+    Monster.MonsterAddInventory(builder, inventory_offset)
     monster_offset = Monster.MonsterEnd(builder)
 
     builder.Finish(monster_offset)

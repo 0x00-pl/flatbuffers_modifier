@@ -99,6 +99,7 @@ class FlatbuffersModifier:
             elif isinstance(member, list):
                 # 如果是flatbuffers对象，则递归重建子对象
                 sub_object_list = []
+                item_type = type(member[0])
                 for idx, item in enumerate(member):
                     idx_str = str(idx)
                     list_sub_modifications = {
@@ -106,16 +107,16 @@ class FlatbuffersModifier:
                         for k, v in sub_modifications.items()
                         if self.fix_field_name(k).startswith(idx_str + '.') or self.fix_field_name(k) == field
                     }
-                    if isinstance(item, bytes):
+                    if item_type == bytes:
                         sub_object_list.append(builder.CreateString(item))
-                    elif isinstance(item, int):
+                    elif item_type == int:
                         sub_object_list.append(item)
                     else:
                         sub_object_list.append(self.recursive_rebuild(builder, item, list_sub_modifications))
 
                 getattr(object_module, f'Start{field}Vector')(builder, len(member))
                 for item in sub_object_list:
-                    if isinstance(item, int):
+                    if item_type == int:
                         builder.PrependInt32(item)
                     else:
                         builder.PrependUOffsetTRelative(item)
