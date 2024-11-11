@@ -18,6 +18,9 @@ class FlatbuffersModifier:
         self.flatbuffers_namespace = flatbuffers_namespace
         self.root_type_name = root_type_name
         self.root = getattr(self.get_module(root_type_name), self.root_type_name).GetRootAs(self.flatbuffers_data, offset)
+        self.identifier = None
+        if self.root.ExecutableDefBufferHasIdentifier(self.flatbuffers_data, offset):
+            self.identifier = self.flatbuffers_data[offset + 4:offset + 8]
 
     def get_module(self, type_name: str):
         """
@@ -162,5 +165,5 @@ class FlatbuffersModifier:
         """
         builder = flatbuffers.Builder(0)
         new_root = self.recursive_rebuild(builder, self.root, modifications)
-        builder.Finish(new_root, identifier)
+        builder.Finish(new_root, identifier if identifier is not None else self.identifier)
         return builder.Output()
