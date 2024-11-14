@@ -19,7 +19,8 @@ class FlatbuffersModifier:
         self.root_type_name = root_type_name
         self.root = getattr(self.get_module(root_type_name), self.root_type_name).GetRootAs(self.flatbuffers_data, offset)
         self.identifier = None
-        if self.root.ExecutableDefBufferHasIdentifier(self.flatbuffers_data, offset):
+        identifier_attr = f'{self.root.__class__.__name__}BufferHasIdentifier'
+        if hasattr(self.root, identifier_attr) and getattr(self.root, identifier_attr)(self.flatbuffers_data, offset):
             self.identifier = self.flatbuffers_data[offset + 4:offset + 8]
 
     def get_module(self, type_name: str):
