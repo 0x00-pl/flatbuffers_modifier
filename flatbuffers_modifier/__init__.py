@@ -128,6 +128,10 @@ class FlatbuffersRebuildVisitor(FlatbuffersVisitor):
         # 开始构建列表
         getattr(obj_module, f'Start{field}Vector')(self.builder, len(results))
 
+        element_type = None
+        if len(results) != 0 and hasattr(obj, f'{field}AsNumpy'):
+            element_type = getattr(obj, f'{field}AsNumpy')().dtype
+
         # 反向遍历列表并添加元素
         for idx, value in reversed(list(enumerate(results))):
             old_member = getattr(obj, field)(idx)
@@ -135,12 +139,14 @@ class FlatbuffersRebuildVisitor(FlatbuffersVisitor):
                 self.builder.PrependUOffsetTRelative(value)
             elif isinstance(old_member, (str, bytes)):
                 self.builder.PrependUOffsetTRelative(value)
-            elif type(old_member) == 'int32':
+            elif element_type == 'int64':
+                self.builder.PrependInt64(value)
+            elif element_type == 'int32':
                 self.builder.PrependInt32(value)
-            elif type(old_member) == 'uint8':
+            elif element_type == 'uint8':
                 self.builder.PrependUint8(value)
             else:
-                raise NotImplementedError(f'Unsupported value type: {type(value)}')
+                raise NotImplementedError(f'Unsupported value type: {type(value)} at {current_path=}')
 
         # 结束列表构建并返回偏移量
         return self.builder.EndVector()
