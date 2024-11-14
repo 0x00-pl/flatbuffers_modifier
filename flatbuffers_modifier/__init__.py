@@ -146,7 +146,7 @@ class FlatbuffersRebuildVisitor(FlatbuffersVisitor):
             elif element_type == 'uint8':
                 self.builder.PrependUint8(value)
             else:
-                raise NotImplementedError(f'Unsupported value type: {type(value)} at {current_path=}')
+                raise NotImplementedError(f'Unsupported type at {current_path=}: {type(value)=} or {element_type=}')
 
         # 结束列表构建并返回偏移量
         return self.builder.EndVector()
