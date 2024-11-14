@@ -43,7 +43,8 @@ class FlatbuffersVisitor:
         :param current_path: 当前路径
         """
         assert hasattr(obj, '_tab')
-        aux_members = ['GetRootAs', f'GetRootAs{obj.__class__.__name__}', 'Init', f'{obj.__class__.__name__}BufferHasIdentifier']
+        aux_members = ['GetRootAs', f'GetRootAs{obj.__class__.__name__}', 'Init',
+                       f'{obj.__class__.__name__}BufferHasIdentifier']
         results = {}
         # 获取对象的所有字段名称
         fields = dir(obj)
@@ -52,7 +53,8 @@ class FlatbuffersVisitor:
                 continue
             if field in aux_members:
                 continue
-            if field.endswith('AsNumpy') or (field.endswith('Length') and field[:-len('Length')] in fields) or field.endswith('IsNone'):
+            if field.endswith('AsNumpy') or (
+                    field.endswith('Length') and field[:-len('Length')] in fields) or field.endswith('IsNone'):
                 continue
 
             if field + 'Length' in fields:
@@ -96,6 +98,13 @@ class FlatbuffersRebuildVisitor(FlatbuffersVisitor):
         self.builder = builder
 
     def visit_object(self, obj, current_path: str):
+        """
+        访问对象并重建它
+
+        :param obj: 要访问的对象
+        :param current_path: 当前路径
+        :return: 重建后的对象偏移量
+        """
         result = super().visit_object(obj, current_path)
         obj_module = self.get_module(obj.__class__.__name__)
         obj_module.Start(self.builder)
@@ -104,10 +113,22 @@ class FlatbuffersRebuildVisitor(FlatbuffersVisitor):
         return obj_module.End(self.builder)
 
     def visit_list(self, obj, field: str, current_path: str):
+        """
+        访问列表并重建它
+
+        :param obj: 对象
+        :param field: 字段名称
+        :param current_path: 当前路径
+        :return: 重建后的列表偏移量
+        """
         obj_module = self.get_module(obj.__class__.__name__)
         results = super().visit_list(obj, field, current_path)
         assert isinstance(results, list)
+
+        # 开始构建列表
         getattr(obj_module, f'Start{field}Vector')(self.builder, len(results))
+
+        # 反向遍历列表并添加元素
         for idx, value in reversed(list(enumerate(results))):
             old_member = getattr(obj, field)(idx)
             if hasattr(old_member, '_tab'):
@@ -120,13 +141,55 @@ class FlatbuffersRebuildVisitor(FlatbuffersVisitor):
                 self.builder.PrependUint8(value)
             else:
                 raise NotImplementedError(f'Unsupported value type: {type(value)}')
+
+        # 结束列表构建并返回偏移量
         return self.builder.EndVector()
 
     def visit_value(self, value, current_path: str):
+        """
+        访问值并处理字符串和字节类型
+
+        :param value: 值
+        :param current_path: 当前路径
+        :return: 处理后的值
+        """
         if isinstance(value, (str, bytes)):
             return self.builder.CreateString(value)
         else:
             return value
+
+
+class FlatbuffersModifyVisitor(FlatbuffersRebuildVisitor):
+    def __init__(self, root_type_module: str, builder: flatbuffers.Builder):
+        """
+        初始化 FlatbuffersModifyVisitor
+        :param root_type_module: 根类型所在命名空间（例如 'MyGame.Sample'）
+        :param builder: flatbuffers.Builder 对象
+        """
+        super().__init__(root_type_module, builder)
+        self.modifications = {}
+
+    def modify_fields(self, key, value):
+        """
+        修改指定字段的值
+        :param key: 字段路径（例如 'monster.weapon.damage'）
+        :param value: 新值
+        """
+        fields = key.split('.')
+        path = '.' + '.'.join([self.fix_field_name(i) for i in fields])
+        self.modifications[path] = value
+
+    def visit(self, obj, field_name):
+        """
+        访问对象并应用修改
+        :param obj: 要访问的对象
+        :param field_name: 字段名称
+        :return: 修改后的对象
+        """
+        updated_obj = obj
+        if field_name in self.modifications:
+            updated_obj = self.modifications[field_name]
+        return super().visit(updated_obj, field_name)
 
 
 class FlatbuffersModifier:
@@ -140,7 +203,8 @@ class FlatbuffersModifier:
         self.flatbuffers_data = flatbuffers_data
         self.flatbuffers_namespace = flatbuffers_namespace
         self.root_type_name = root_type_name
-        self.root = getattr(self.get_module(root_type_name), self.root_type_name).GetRootAs(self.flatbuffers_data, offset)
+        root_type_class = getattr(self.get_module(root_type_name), self.root_type_name)
+        self.root = root_type_class.GetRootAs(self.flatbuffers_data, offset)
         self.identifier = None
         identifier_attr = f'{self.root.__class__.__name__}BufferHasIdentifier'
         if hasattr(self.root, identifier_attr) and getattr(self.root, identifier_attr)(self.flatbuffers_data, offset):
@@ -190,7 +254,10 @@ class FlatbuffersModifier:
 
         object_module = self.get_module(old_object.__class__.__name__)
         # 辅助成员方法名称列表
-        aux_members = ['GetRootAs', f'GetRootAs{old_object.__class__.__name__}', 'Init', f'{old_object.__class__.__name__}BufferHasIdentifier']
+        aux_members = [
+            'GetRootAs', f'GetRootAs{old_object.__class__.__name__}', 'Init',
+            f'{old_object.__class__.__name__}BufferHasIdentifier'
+        ]
         # 获取旧对象的所有字段名称，排除辅助成员方法
         fields = dir(old_object)
         new_members: Dict[str, Any] = {}
@@ -199,7 +266,9 @@ class FlatbuffersModifier:
                 continue
             if field in aux_members:
                 continue
-            if field.endswith('AsNumpy') or (field.endswith('Length') and field[:-len('Length')] in fields) or field.endswith('IsNone'):
+            if field.endswith('AsNumpy') \
+                    or (field.endswith('Length') and field[:-len('Length')] in fields) \
+                    or field.endswith('IsNone'):
                 continue
 
             # 获取与当前字段相关的所有修改
