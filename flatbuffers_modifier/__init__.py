@@ -177,7 +177,7 @@ class FlatbuffersModifyVisitor(FlatbuffersRebuildVisitor):
 
     def modify_fields(self, key, value):
         """
-        修改指定字段的值
+        修改指定字段的值, 如果是vector, 请填这个包含这个vector的flatbuffers object.
         :param key: 字段路径（例如 'monster.weapon.damage'）
         :param value: 新值
         """
@@ -185,17 +185,31 @@ class FlatbuffersModifyVisitor(FlatbuffersRebuildVisitor):
         path = '.' + '.'.join([self.fix_field_name(i) for i in fields])
         self.modifications[path] = value
 
-    def visit(self, obj, field_name):
+    def visit(self, obj, current_path):
         """
         访问对象并应用修改
         :param obj: 要访问的对象
-        :param field_name: 字段名称
+        :param current_path: 字段名称
         :return: 修改后的对象
         """
         updated_obj = obj
-        if field_name in self.modifications:
-            updated_obj = self.modifications[field_name]
-        return super().visit(updated_obj, field_name)
+        if current_path in self.modifications:
+            updated_obj = self.modifications[current_path]
+        return super().visit(updated_obj, current_path)
+
+    def visit_list(self, obj, field: str, current_path: str):
+        """
+        访问列表并应用修改
+
+        :param obj: 对象
+        :param field: 字段名称
+        :param current_path: 当前路径
+        :return: 修改后的列表
+        """
+        updated_obj = obj
+        if current_path + '.' + field in self.modifications:
+            updated_obj = self.modifications[current_path + '.' + field]
+        return super().visit_list(updated_obj, field, current_path)
 
 
 class FlatbuffersModifier:

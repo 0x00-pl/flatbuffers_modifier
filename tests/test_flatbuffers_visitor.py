@@ -1,7 +1,7 @@
 import flatbuffers
 
 from flatbuffers_modifier import FlatbuffersVisitor, FlatbuffersRebuildVisitor, FlatbuffersModifyVisitor
-from tests.data.MyGame.Sample import Monster
+from tests.data.MyGame.Sample import Monster, Weapon
 from tests.flatbuffers_pool import get_buffer_data
 
 
@@ -46,11 +46,21 @@ def test_flatbuffers_modify():
     root_object = Monster.Monster.GetRootAs(origin_data, 0)
 
     builder = flatbuffers.Builder(0)
+    weapon_type = builder.CreateString("Axe")
+    Weapon.Start(builder)
+    Weapon.AddDamage(builder, 99)
+    Weapon.AddType(builder, weapon_type)
+    inventory_weapon_offset = Weapon.End(builder)
+    builder.Finish(inventory_weapon_offset)
+    new_weapon_data = builder.Output()
+    new_weapon = Weapon.Weapon.GetRootAs(new_weapon_data, 0)
+
+    builder = flatbuffers.Builder(0)
     visitor = FlatbuffersModifyVisitor("MyGame.Sample", builder)
     visitor.modify_fields("hp", 500)
     visitor.modify_fields("weapon.damage", 10)
     visitor.modify_fields("weapon.type", "Bow")
-    visitor.modify_fields("inventory.0.damage", 100)
+    visitor.modify_fields("inventory.0", new_weapon)
 
     result = visitor.visit(root_object, '')
     builder.Finish(result)
@@ -61,4 +71,4 @@ def test_flatbuffers_modify():
     assert new_object.Hp() == 500
     assert new_object.Weapon().Damage() == 10
     assert new_object.Weapon().Type().decode() == "Bow"
-    assert new_object.Inventory(0).Damage() == 100
+    assert new_object.Inventory(0).Damage() == 99
