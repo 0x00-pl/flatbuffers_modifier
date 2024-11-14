@@ -60,11 +60,10 @@ class FlatbuffersModifyVisitor(FlatbuffersRebuildVisitor):
 
 def test_flatbuffers_modify():
     origin_data = get_buffer_data()
+    root_object = Monster.Monster.GetRootAs(origin_data, 0)
 
     builder = flatbuffers.Builder(0)
     visitor = FlatbuffersModifyVisitor("MyGame.Sample", builder)
-
-    root_object = Monster.Monster.GetRootAs(origin_data, 0)
     visitor.modify_fields("hp", 500)
     visitor.modify_fields("weapon.damage", 10)
     visitor.modify_fields("weapon.type", "Bow")
