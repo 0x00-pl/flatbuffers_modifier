@@ -1,7 +1,6 @@
 import importlib
 import re
-from abc import abstractmethod, ABC
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 import flatbuffers
 import numpy
@@ -113,7 +112,7 @@ class FlatbuffersRebuildVisitor(FlatbuffersVisitor):
             old_member = getattr(obj, field)(idx)
             if hasattr(old_member, '_tab'):
                 self.builder.PrependUOffsetTRelative(value)
-            elif isinstance(old_member, bytes):
+            elif isinstance(old_member, (str, bytes)):
                 self.builder.PrependUOffsetTRelative(value)
             elif type(old_member) == 'int32':
                 self.builder.PrependInt32(value)
@@ -124,7 +123,7 @@ class FlatbuffersRebuildVisitor(FlatbuffersVisitor):
         return self.builder.EndVector()
 
     def visit_value(self, value, current_path: str):
-        if isinstance(value, bytes):
+        if isinstance(value, (str, bytes)):
             return self.builder.CreateString(value)
         else:
             return value
