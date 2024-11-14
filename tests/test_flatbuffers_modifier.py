@@ -1,48 +1,16 @@
 import os
 
-import flatbuffers
-
 from flatbuffers_modifier import FlatbuffersModifier
-from tests.data.MyGame.Sample import Monster, Weapon
+from tests.data.MyGame.Sample import Monster
+from tests.flatbuffers_pool import get_buffer_data
 
 
 def test_modify_single_member():
-    # 初始化原始数据
-    builder = flatbuffers.Builder(0)
-
-    # 构建 Weapon 对象
-    weapon_type = builder.CreateString("Sword")
-    Weapon.WeaponStart(builder)
-    Weapon.WeaponAddDamage(builder, 50)
-    Weapon.WeaponAddType(builder, weapon_type)
-    weapon_offset = Weapon.WeaponEnd(builder)
-
-    # 构建 Inventory.Weapon 对象
-    weapon_type = builder.CreateString("Axe")
-    Weapon.WeaponStart(builder)
-    Weapon.WeaponAddDamage(builder, 80)
-    Weapon.WeaponAddType(builder, weapon_type)
-    inventory_weapon_offset = Weapon.WeaponEnd(builder)
-
-    # 构建 Inventory 对象
-    Monster.StartInventoryVector(builder, 1)
-    builder.PrependSOffsetTRelative(inventory_weapon_offset)
-    inventory_offset = builder.EndVector()
-
-    # 构建 Monster 对象
-    monster_name = builder.CreateString("Orc")
-    Monster.MonsterStart(builder)
-    Monster.MonsterAddHp(builder, 300)
-    Monster.MonsterAddName(builder, monster_name)
-    Monster.MonsterAddWeapon(builder, weapon_offset)  # 将 Weapon 对象添加到 Monster 中
-    Monster.MonsterAddInventory(builder, inventory_offset)
-    monster_offset = Monster.MonsterEnd(builder)
-
-    builder.Finish(monster_offset)
+    # 获取原始数据
+    original_data = get_buffer_data()
 
     # 保存初始数据
     os.makedirs("tests/data/output", exist_ok=True)
-    original_data = builder.Output()
     with open("tests/data/output/monster.bin", "wb") as f:
         f.write(original_data)
 
