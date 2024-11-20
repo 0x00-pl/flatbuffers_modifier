@@ -1,9 +1,6 @@
 import importlib
-import re
-from typing import Any, Dict
 
 import flatbuffers
-import numpy
 
 
 class FlatbuffersVisitor:

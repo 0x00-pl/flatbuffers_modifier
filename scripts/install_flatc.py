@@ -1,6 +1,5 @@
 import os
 import platform
-import tarfile
 import urllib.request
 import zipfile
 from pathlib import Path
